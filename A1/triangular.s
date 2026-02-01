@@ -32,7 +32,7 @@ main:
     mv a0, t0
     call closed_formula
     li a7, 1 #Print integer.
-    ecall 
+    ecall #ecall treat as signed no. so using unsigned doesn't matter. 
     
     #Iterative:
     li a7, 4
@@ -91,12 +91,12 @@ closed_formula:
 
 is_even:
     div a0, a0, t3 
-    mul a0, a0, t1 
+    mulu a0, a0, t1 
     ret 
 
 is_odd:
     div t1, t1, t3
-    mul a0, a0, t1 
+    mulu a0, a0, t1 
     ret
 
 iterative: 
