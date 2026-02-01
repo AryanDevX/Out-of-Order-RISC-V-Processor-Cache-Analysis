@@ -10,6 +10,7 @@ prompt3: .string "\nIterative Ans: "
 prompt4: .string "\nRecursive Ans: "
 prompt5: .string "\nMemoization Ans: "
 buffer: .zero 255 #Reserve 255 bytes of memory and fill them with 0.
+prompt_end: .string "\nProgram is succesffully ended"
 
 .text 
 main:
@@ -18,9 +19,11 @@ main:
     ecall # The system look at a7 and according to the value in it, it do that operation. Ecall = Environmental call.
 
     call readInt #Calling our function for reading integer.
-    
     mv t0,a0  #Storing result temporarily
     #Don't use t0 in functions as it hold n.
+
+    li t1, -1
+    beq t0, t1, exit_program
     
     #Closed Formula:
     li a7, 4
@@ -46,13 +49,14 @@ main:
     la a0, prompt4 
     ecall 
     mv a0, t0 
-    call iterative
+    call recursive
     li a7, 1
     ecall
     mv a0, t0  
-
-    li a7, 10 
-    ecall #Stop the program.
+    li a7, 11
+    li a0, 10 # ascii newline
+    ecall
+    j main 
 
 readInt: 
     li a7, 63 #63 is for Syscall read. Read from a file.
@@ -131,3 +135,11 @@ recursive:
 base_case:
     li a0, 1
     ret 
+
+exit_program:
+    li a7, 4
+    la a0, prompt_end
+    ecall
+
+    li a7, 10
+    ecall
