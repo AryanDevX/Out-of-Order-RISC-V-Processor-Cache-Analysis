@@ -4,24 +4,28 @@
 
 .data
 
-prompt1: .string "\nEnter integer n: " #String is used to convert into ascii values ans also add \0 at end that tell to print the string
-prompt2: .string "\nClosed Form ans: "
-prompt3: .string "\nIterative Ans: "
-prompt4: .string "\nRecursive Ans: "
-prompt5: .string "\nMemoization Ans: "
-buffer: .zero 255 #Reserve 255 bytes of memory and fill them with 0.
-prompt_end: .string "\nProgram is succesffully ended"
+    prompt1: .string "\nEnter integer n or -1 to exit: " #String is used to convert character into ascii values and also add \0 at end that tell the end of string.
+    prompt2: .string "\nClosed Form ans: "
+    prompt3: .string "\nIterative Ans: "
+    prompt4: .string "\nRecursive Ans: "
+    prompt5: .string "\nMemoization Ans: "
+    buffer: .zero 255 #Reserve 255 bytes of memory and fill them with 0.
+    prompt_end: .string "\nProgram is succesffully ended!"
+    memo: .zero 262140 #We need 65535*4 (As 1 int takes 4 bytes).
+    #prompt6: .string "\nSorry, you can't give an integer greater than 65535."
+
 
 .text 
 main:
     li a7, 4 #Loading 4 into register a7. 4 is used to tell OS that we want to print the string.
-    la a0, prompt1
+    la a0, prompt1 #Loading the address of promp1
     ecall # The system look at a7 and according to the value in it, it do that operation. Ecall = Environmental call.
 
     call readInt #Calling our function for reading integer.
     mv t0,a0  #Storing result temporarily
     #Don't use t0 in functions as it hold n.
 
+    #Exit
     li t1, -1
     beq t0, t1, exit_program
     
@@ -32,7 +36,7 @@ main:
     mv a0, t0
     call closed_formula
     li a7, 1 #Print integer.
-    ecall #ecall treat as signed no. so using unsigned doesn't matter. 
+    ecall #ecall treat as signed no. so using unsigned doesn't matter. Therefore the max no. for which we can get triangular no. is 65535 (For 32 bit register)
     
     #Iterative:
     li a7, 4
@@ -58,6 +62,7 @@ main:
     ecall
     j main 
 
+#Reading from console:
 readInt: 
     li a7, 63 #63 is for Syscall read. Read from a file.
     li a0, 0 #0 is for Std Input(keyboard/Console), 1 is for Std Output(screen), 2 is for error
@@ -67,8 +72,7 @@ readInt:
     la t1, buffer #Pointer to the current char in buffer.  
     li a0, 0 
     li t2, 10 #For multiplying by 10 and doing.
-
-
+    
 parse_loop:
     lbu t3, 0(t1) #Getting the first character.
     li t4, 10 #Newline \n is 10 and null is 0.
@@ -83,6 +87,8 @@ parse_loop:
 parse_end: 
     ret
 
+
+
 closed_formula:
     addi t1, a0, 1 
     andi t2, a0, 1
@@ -91,13 +97,15 @@ closed_formula:
 
 is_even:
     div a0, a0, t3 
-    mulu a0, a0, t1 
+    mul a0, a0, t1 
     ret 
 
 is_odd:
     div t1, t1, t3
-    mulu a0, a0, t1 
+    mul a0, a0, t1 
     ret
+
+
 
 iterative: 
     li t1, 1
@@ -114,21 +122,20 @@ end_loop:
     mv a0, t2 
     ret 
 
+
+
 recursive: 
+    beq a0, .zero,  return_zero
     li t1, 1
-    ble a0, t1, base_case 
-    
+    beq a0, t1, base_case
     addi sp, sp, -8 
     sw ra, 4(sp)
     sw a0, 0(sp)
-
     addi a0, a0, -1 
     jal ra, recursive
-
     lw t2, 0(sp)
     lw ra, 4(sp)
     addi sp, sp, 8
-
     add a0, a0, t2 
     ret 
 
@@ -136,6 +143,12 @@ base_case:
     li a0, 1
     ret 
 
+return_zero:
+    li a0, 0
+    ret
+
+
+#Exit
 exit_program:
     li a7, 4
     la a0, prompt_end
