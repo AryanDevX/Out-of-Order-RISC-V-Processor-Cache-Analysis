@@ -12,7 +12,8 @@
     buffer: .zero 255 #Reserve 255 bytes of memory and fill them with 0.
     prompt_end: .string "\nProgram is succesffully ended!"
     memo: .zero 262140 #We need 65535*4 (As 1 int takes 4 bytes).
-    #prompt6: .string "\nSorry, you can't give an integer greater than 65535."
+    prompt6: .string "\nSorry, our program doesn't support an integer greater than 65535."
+    prompt7: .string "\nNegative integers except -1(i.e for EXIT) are not allowed."
 
 
 .text 
@@ -28,7 +29,14 @@ main:
     #Exit
     li t1, -1
     beq t0, t1, exit_program
+
+    #Negative Num:
+    li t1, 0
+    blt t0, t1, neg_num
     
+    li t1, 65536
+    bge t0, t1, greater_num
+
     #Closed Formula:
     li a7, 4
     la a0, prompt2 
@@ -125,7 +133,7 @@ end_loop:
 
 
 recursive: 
-    beq a0, .zero,  return_zero
+    beq a0, zero,  return_zero
     li t1, 1
     beq a0, t1, base_case
     addi sp, sp, -8 
@@ -146,6 +154,24 @@ base_case:
 return_zero:
     li a0, 0
     ret
+
+
+
+#Negative Number:
+neg_num:
+    li a7, 4
+    la a0, prompt7
+    ecall 
+    j main 
+
+
+#Greater Number:
+greater_num:
+    li a7, 4
+    la a0, prompt6 
+    ecall 
+    j main
+
 
 
 #Exit
