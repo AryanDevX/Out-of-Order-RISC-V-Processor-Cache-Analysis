@@ -10,8 +10,8 @@
     prompt5: .string "\nMemoization Ans: "
     buffer: .zero 255 #Reserve 255 bytes of memory and fill them with 0.
     prompt_end: .string "\nProgram is succesffully ended!"
-    memo: .zero 262140 #We need 65535*4 (As 1 int takes 4 bytes),the memo array.
-    prompt6: .string "\nSorry, our program doesn't support an integer equal to or greater than 65535."
+    memo: .zero 262144 #We need 65536*4 (As 1 int takes 4 bytes),the memo array.
+    prompt6: .string "\nSorry, our program doesn't support an integer greater than 65535."
     prompt7: .string "\nNegative integers except -1(i.e for EXIT) are not allowed."
 
 
@@ -44,7 +44,7 @@ main:
     mv a0, t0
     call closed_formula
     li a7, 1 #Print integer.
-    ecall #ecall treat as signed no. so using unsigned doesn't matter. Therefore the max no. for which we can get triangular no. is 65534 here (For 32 bit register)
+    ecall #ecall treat as signed no. so using unsigned doesn't matter. Therefore the max no. for which we can get triangular no. is 65535 here (For 32 bit register)
     
     #Iterative:
     li a7, 4
@@ -54,7 +54,7 @@ main:
     call iterative
     li a7, 1
     ecall
-    mv a0, t0    #not necessary ig cause a0 eventualy overwritten as prompt4 in line 61, same like this on line 66
+    
     #Recursive:
     li a7, 4
     la a0, prompt4 
@@ -63,8 +63,7 @@ main:
     call recursive
     li a7, 1
     ecall
-    mv a0, t0  
-    
+
 
     #Memoized Recursive 
     li a7, 4
@@ -85,36 +84,36 @@ main:
 
 #Reading from console:
 readInt:
-    li a7, 63          # syscall: read
+    li a7, 63 # syscall: read
     li a0, 0           
     la a1, buffer
     li a2, 255
     ecall
-    la t1, buffer      # pointer to buffer
-    li a0, 0           # result
-    li t2, 10          # base 10
-    li t5, 1           # sign = +1
+    la t1, buffer # pointer to buffer
+    li a0, 0   # result
+    li t2, 10   # base 10
+    li t5, 1   # sign = +1
 
 parse_loop:
     lbu t3, 0(t1)
-    li t4, 10          # newline '\n'
+    li t4, 10  # newline '\n'
     beq t3, t4, parse_end
     beqz t3, parse_end
-    li t6, 45          # ASCII '-'
+    li t6, 45   # ASCII '-'
     beq t3, t6, set_negative
-    addi t3, t3, -48   # ASCII to int
+    addi t3, t3, -48 # ASCII to int
     mul a0, a0, t2
     add a0, a0, t3
     addi t1, t1, 1
     j parse_loop
 
 set_negative:
-    li t5, -1          # sign = -1
+    li t5, -1  # sign = -1
     addi t1, t1, 1
     j parse_loop
 
 parse_end:
-    mul a0, a0, t5     # apply sign
+    mul a0, a0, t5 # apply sign
     ret
 
 
@@ -126,7 +125,7 @@ closed_formula:
 
 is_even:
     div a0, a0, t3 
-    mul a0, a0, t1 
+    mul a0, a0, t1 gi
     ret 
 
 is_odd:
