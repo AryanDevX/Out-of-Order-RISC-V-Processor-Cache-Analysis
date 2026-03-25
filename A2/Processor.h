@@ -7,8 +7,22 @@
 #include "BranchPredictor.h"
 #include "ExecutionUnit.h"
 #include "LoadStoreQueue.h"
+#include "Latches.h"
 
 class Processor {
+private:
+    //State of the latches at the beginning of the clock cycle and they are read only so block can't change it.
+    IfIDLatch ifId;
+    IdExLatch idEx;
+    ExMemLatch exMem;
+    MemWbLatch memWb;
+
+    //State being written to during the clock cycle:
+    IfIDLatch nextIfId;
+    IdExLatch nextIdEx;
+    ExMemLatch nextExMem;
+    MemWbLatch nextMemWb;
+
 public:
     int pc;
     int clock_cycle;
@@ -59,10 +73,7 @@ public:
 
     void stageCommit() {};
 
-    bool step() {
-        clock_cycle++;
-        return true; // return false if CPU has no more to do after this cycle
-    }
+    bool step() {};
 
     void dumpArchitecturalState() {
         std::cout << "\n=== ARCHITECTURAL STATE (CYCLE " << clock_cycle << ") ===\n";
