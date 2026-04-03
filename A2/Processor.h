@@ -7,22 +7,27 @@
 #include "BranchPredictor.h"
 #include "ExecutionUnit.h"
 #include "LoadStoreQueue.h"
-#include "Latches.h"
+
+struct BroadcastPackage{
+    int tag;
+    int val;
+    bool exception;
+    int store_addr;
+    UnitType src;
+    ExecutionUnit* exe_unit; //ptr to clean the execution unit;
+    LoadStoreQueue* lsq_unit; 
+};
+
+struct IfIDLatch {
+    Instruction inst; //instruction fetched last cycle
+    bool valid = false; //is there an actual instruction
+    int predicted_pc = 0;
+};
 
 class Processor {
 private:
-    //State of the latches at the beginning of the clock cycle and they are read only so block can't change it.
     IfIDLatch ifId;
-    IdExLatch idEx;
-    ExMemLatch exMem;
-    MemWbLatch memWb;
-
-    //State being written to during the clock cycle:
-    IfIDLatch nextIfId;
-    IdExLatch nextIdEx;
-    ExMemLatch nextExMem;
-    MemWbLatch nextMemWb;
-
+    
 public:
     int pc;
     int clock_cycle;
@@ -37,53 +42,34 @@ public:
     bool exception = false; // exception bit
 
     // register alias table / reorder buffer
+    std::vector<ROBEntry> rob;
+    std::vector<int> RAT;
 
+    int rob_head;
+    int rob_tail;
+    int rob_count; //how many instructions are there currently.
+    int rob_size;
     std::vector<ExecutionUnit> units;
     LoadStoreQueue* lsq;
     BranchPredictor bp;
 
-    Processor(ProcessorConfig& config) {
-        pc = 0;
-        clock_cycle = 0;
-        ARF.resize(config.num_regs, 0);
-        Memory.resize(config.mem_size);
+    Processor(ProcessorConfig& config);
 
-        // Instantiate Hardware Units
-        // Adder
-        // Multiplier
-        // Divider
-        // Branch Computation
-        // Bitwise Logic
-        // Load-Store Unit
-    }
+    void loadProgram(const std::string& filename);
 
-    void loadProgram(const std::string& filename) {
-        std::ifstream file(filename);
-    }
+    void flush();
 
-    void flush() {};
+    void broadcastOnCDB();
 
-    void broadcastOnCDB() {};
+    void stageFetch();
 
-    void stageFetch() {};
+    void stageDecode();
 
-    void stageDecode() {};
+    void stageExecuteAndBroadcast();
 
-    void stageExecuteAndBroadcast() {};
+    void stageCommit();
 
-    void stageCommit() {};
+    bool step();
 
-    bool step() {};
-
-    void dumpArchitecturalState() {
-        std::cout << "\n=== ARCHITECTURAL STATE (CYCLE " << clock_cycle << ") ===\n";
-        for (int i = 0; i < ARF.size(); i++) {
-            std::cout << "x" << i << ": " << std::setw(4) << ARF[i] << " | ";
-            if ((i+1) % 8 == 0) std::cout << std::endl;
-        }
-        if (exception) {
-            std::cout << "EXCEPTION raised by instruction " << pc + 1 << std::endl;
-        }
-        std::cout << "Branch Predictor Stats: " << bp.correct_predictions << "/" << bp.total_branches << " correct.\n";
-    }
+    void dumpArchitecturalState();
 };

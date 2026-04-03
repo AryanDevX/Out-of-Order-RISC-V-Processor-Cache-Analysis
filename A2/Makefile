@@ -5,21 +5,19 @@ CXXFLAGS = -std=c++17 -Wall
 # ==========================================
 # make compile FILE=<filename.cpp>
 # ==========================================
-# This target should compile your files with the provided 
-# main.cpp. The main.cpp will always #include "Processor.h" 
-# and will have its own main() function.
+# This target compiles your main file along with all other 
+# component files (Processor, ExecutionUnit, etc.) into one binary.
 compile:
 	@echo "Compiling simulator:"
-	$(CXX) $(CXXFLAGS) $(FILE) -o main
+	$(CXX) $(CXXFLAGS) *.cpp -o main
 	@echo "Build successful, 'main' created."
 
 # ==========================================
 # make run FILE=<filename.s>
 # ==========================================
-# Update this target to run whatever script or 
-# program you wrote to preprocess the assembly labels. 
-# Example below assumes a Python script named 'compiler.py'.
+# Since the assembly preprocessor is built directly into our 
+# C++ loadProgram function, we just need to execute the compiled 
+# binary and pass the .s file to it!
 run:
-	@echo "Preprocessing $(FILE)..."
-	python3 compiler.py $(FILE)
-	@echo "Preprocessing complete."
+	@echo "Loading and executing $(FILE)..."
+	./main $(FILE)

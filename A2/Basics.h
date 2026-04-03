@@ -33,11 +33,36 @@ struct ProcessorConfig {
 };
 
 struct ROBEntry {
-    // valid bit, ready bit, architectural register ID
-    // other fields as required
+    bool active = false; //Is holding an active instruction.
+    bool ready = false; //Is we have the value from the function unit.
+    int dest_arch_reg = -1; //Architectural register ID to update. For LW, SW it is -1.
+    int value = 0;
+    int imm;
+    bool has_exception = false;
+
+    //Data for commit stage:
+    OpCode op; //Help the commit stage what to do.
+    int pc = 0; //For exception
+    int target_pc = 0; //For branches store the calculated target address.
+    int store_add = 0; //For SW
+    int predicted_pc = 0;
 };
 
 struct RSEntry {
-    // value, tag, ready ... for both operands
-    // other fields as required
+    bool active = 0; //Is holding an active instruction.
+    OpCode op;
+
+    int imm;
+    //Source 1:
+    int v1 = 0; //Value of source 1
+    int tag1 = -1; //The ROB tag we are waiting. -1 means it is ready.
+
+    //Source 2:
+    int v2 = 0;
+    int tag2 = -1;
+
+    //Destination:
+    int dest_rob_tag = -1; //ROB tag for broadcast.
+    int I = 0; //for immediate value or calculated memory address for sw/lw.
+    int pc = 0; //usefull for pc relative branches.
 };
