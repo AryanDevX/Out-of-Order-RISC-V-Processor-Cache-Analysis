@@ -5,7 +5,7 @@ bool overflow(long long result){
 }
 
 void ExecutionUnit::capture(int tag, int val){
-    for(int i=0; i<rs_entries.size(); i++){
+    for(int i=0; i<(int)rs_entries.size(); i++){
         if(rs_entries[i].active){
             if (rs_entries[i].tag1 == tag) {
                 rs_entries[i].v1 = val;
@@ -23,6 +23,7 @@ void ExecutionUnit::executeCycle(int rob_head, int rob_size){
     for(auto& p : pipeline){
         p.cycles_left--;
     }
+    std::vector<RSEntry*> finished_rs;
     //checking if any finished:
     for(auto& p : pipeline){
         if(p.cycles_left == 0){
@@ -108,6 +109,7 @@ void ExecutionUnit::executeCycle(int rob_head, int rob_size){
             result = res;
             dest_rob_tag = p.dest_rob_tag;
             rs_pointer = p.rs_pointer;
+            finished_rs.push_back(p.rs_pointer);
         }
     }
     std::vector<PipelineEntry> remaining;
@@ -120,8 +122,16 @@ void ExecutionUnit::executeCycle(int rob_head, int rob_size){
 
     int selected_rs = -1;
     int smallest_dist = rob_size + 1;
-    for(int i = 0; i < rs_entries.size(); i++){
+    for(int i = 0; i < (int)rs_entries.size(); i++){
         if(!rs_entries[i].active || rs_entries[i].tag1 != -1 || rs_entries[i].tag2 != -1) continue;
+        bool finished_this_cycle = false;
+        for(auto* done_ptr : finished_rs){
+            if(done_ptr == &rs_entries[i]){
+                finished_this_cycle = true;
+                break;
+            }
+        }
+        if(finished_this_cycle) continue;
         // check not already in pipeline
         bool already_in = false;
         for(auto& p : pipeline){

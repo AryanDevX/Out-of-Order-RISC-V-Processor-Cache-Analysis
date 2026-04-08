@@ -102,7 +102,7 @@ void Processor::loadProgram(const std::string& filename){
         clean_instructions.push_back(line);
     }
     
-    for(int i=0; i<clean_instructions.size(); i++){
+    for(int i=0; i<(int)clean_instructions.size(); i++){
         std::string text = clean_instructions[i];
         std::replace(text.begin(), text.end(), ',', ' '); //replacing commas with space so stringstream works
 
@@ -213,7 +213,7 @@ void Processor::flush(){
         r.active = false;
         r.ready = false;
     }
-    for(int i = 0; i<RAT.size(); i++){
+    for(int i = 0; i<(int)RAT.size(); i++){
         RAT[i] = -1;
     }
     ifId.valid = false;
@@ -281,7 +281,7 @@ void Processor::stageFetch(){
     if(ifId.valid){
         return;
     }
-    if(pc >=inst_memory.size()){
+    if(pc >=(int)inst_memory.size()){
         return;
     }
     Instruction cur_inst = inst_memory[pc];
@@ -361,7 +361,7 @@ void Processor::stageDecode(){
 
     // Find free RS slot
     int free_rs = -1;
-    for(int i = 0; i < rs_list->size(); i++){
+    for(int i = 0; i < (int)rs_list->size(); i++){
         if(!(*rs_list)[i].active){
             free_rs = i;
             break;
@@ -497,7 +497,7 @@ bool Processor::step(){
 
 void Processor::dumpArchitecturalState() {
         std::cout << "\n=== ARCHITECTURAL STATE (CYCLE " << clock_cycle << ") ===\n";
-        for (int i = 0; i < ARF.size(); i++) {
+        for (int i = 0; i < (int)ARF.size(); i++) {
             std::cout << "x" << i << ": " << std::setw(4) << ARF[i] << " | ";
             if ((i+1) % 8 == 0) std::cout << std::endl;
         }
