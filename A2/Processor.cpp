@@ -439,6 +439,7 @@ void Processor::stageCommit(){
         exception = true;
         pc = head.pc;
         flush();
+        flush_triggered_in_commit = true;
         return;
     }
 
@@ -464,6 +465,7 @@ void Processor::stageCommit(){
             if(!was_correct){
                 flush();
                 pc = actual_next_pc;
+                flush_triggered_in_commit = true;
                 return;
             }
         }
@@ -474,6 +476,7 @@ void Processor::stageCommit(){
         if(head.predicted_pc != actual_next_pc){
             flush();
             pc = actual_next_pc;
+            flush_triggered_in_commit = true;
             return;
         }
     }
@@ -486,7 +489,12 @@ void Processor::stageCommit(){
 
 bool Processor::step(){
     if(exception) return false;
+    flush_triggered_in_commit = false;
     stageCommit();
+    if(flush_triggered_in_commit){
+        clock_cycle++;
+        return !exception && !(pc >= (int)inst_memory.size() && rob_count == 0 && !ifId.valid);
+    }
     stageExecuteAndBroadcast();
     stageDecode();
     stageFetch();

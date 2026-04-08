@@ -27,6 +27,7 @@ struct IfIDLatch {
 class Processor {
 private:
     IfIDLatch ifId;
+    bool flush_triggered_in_commit = false;
     
 public:
     int pc;
