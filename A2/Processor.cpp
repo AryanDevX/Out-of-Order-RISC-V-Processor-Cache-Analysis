@@ -424,7 +424,7 @@ void Processor::stageExecuteAndBroadcast(){
     for(auto& unit:units){
         unit.executeCycle(rob_head, rob_size);
     }
-    lsq->executeCycle(rob_head,rob_size,Memory);
+    lsq->executeCycle(rob_head, rob_size, Memory, rob);
     broadcastOnCDB();
 }
 
