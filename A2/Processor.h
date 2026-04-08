@@ -62,6 +62,8 @@ public:
     void broadcastOnCDB();
 
     void stageFetch();
+    
+    void renameSource(int reg, int& val, int& tag);
 
     void stageDecode();
 
@@ -72,4 +74,5 @@ public:
     bool step();
 
     void dumpArchitecturalState();
+
 };

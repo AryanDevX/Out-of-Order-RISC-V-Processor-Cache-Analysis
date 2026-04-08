@@ -33,12 +33,12 @@ struct ProcessorConfig {
 };
 
 struct ROBEntry {
-    bool active = false; //Is holding an active instruction.
+    bool active = false; //Is holding an active instruction or just value of previous instruction.
     bool ready = false; //Is we have the value from the function unit.
-    int dest_arch_reg = -1; //Architectural register ID to update. For LW, SW it is -1.
+    int dest_arch_reg = -1; //Architectural register ID to update. For SW it is -1.
     int value = 0;
-    int imm;
     bool has_exception = false;
+    int imm;
 
     //Data for commit stage:
     OpCode op; //Help the commit stage what to do.
@@ -63,6 +63,13 @@ struct RSEntry {
 
     //Destination:
     int dest_rob_tag = -1; //ROB tag for broadcast.
-    int I = 0; //for immediate value or calculated memory address for sw/lw.
     int pc = 0; //usefull for pc relative branches.
+};
+
+struct PipelineEntry {
+    OpCode op;
+    int v1, v2, imm;
+    int dest_rob_tag;
+    int cycles_left;
+    RSEntry* rs_pointer;
 };

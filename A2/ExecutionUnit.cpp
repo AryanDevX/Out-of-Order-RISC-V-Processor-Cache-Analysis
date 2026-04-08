@@ -20,112 +20,132 @@ void ExecutionUnit::capture(int tag, int val){
 }
 
 void ExecutionUnit::executeCycle(int rob_head, int rob_size){
-    if(cycle_remaining>0){
-        cycle_remaining--;
-        if(cycle_remaining==0){
-            switch(op){
+    for(auto& p : pipeline){
+        p.cycles_left--;
+    }
+    //checking if any finished:
+    for(auto& p : pipeline){
+        if(p.cycles_left == 0){
+            long long res = 0;
+            bool exc = false;
+            switch(p.op){
                 case OpCode::ADD:
-                    result = (long long) v1 + v2;
-                    has_exception = overflow(result);
+                    res = (long long)p.v1 + p.v2;
+                    exc = overflow(res);
                     break;
                 case OpCode::SUB:
-                    result = (long long) v1 - v2;
-                    has_exception = overflow(result);
+                    res = (long long)p.v1 - p.v2;
+                    exc = overflow(res);
                     break;
                 case OpCode::ADDI:
-                    result = (long long) v1 + imm;
-                    has_exception = overflow(result);
-                    break; 
+                    res = (long long)p.v1 + p.imm;
+                    exc = overflow(res);
+                    break;
                 case OpCode::MUL:
-                    result = (long long)v1*v2;
-                    has_exception = overflow(result);
+                    res = (long long)p.v1 * p.v2;
+                    exc = overflow(res);
                     break;
                 case OpCode::DIV:
-                    if(v2 == 0){
-                        has_exception = 1;
-                        break;
+                    if (p.v2 == 0) { exc = true; }
+                    else {
+                        res = (long long)p.v1 / p.v2;
+                        exc = overflow(res);
                     }
-                    result = (long long)v1/v2;
                     break;
                 case OpCode::REM:
-                    if(v2 == 0){
-                        has_exception = 1;
-                        break;
+                    if (p.v2 == 0) { exc = true; }
+                    else {
+                        res = (long long)p.v1 % p.v2;
+                        exc = overflow(res);
                     }
-                    result = (long long)v1%v2;
+                    break;
+                case OpCode::SLT:
+                    res = (p.v1 < p.v2) ? 1 : 0;
+                    break;
+                case OpCode::SLTI:
+                    res = (p.v1 < p.imm) ? 1 : 0;
                     break;
 
                 //Branch:
                 case OpCode::BEQ:
-                    result = (v1==v2)?1:0;
+                    res = (p.v1 == p.v2) ? 1 : 0;
                     break;
                 case OpCode::BNE:
-                    result = (v1!=v2)?1:0;
+                    res = (p.v1 != p.v2) ? 1 : 0;
                     break;
                 case OpCode::BLT:
-                    result = (v1<v2)?1:0;
+                    res = (p.v1 < p.v2) ? 1 : 0;
                     break;
                 case OpCode::BLE:
-                    result = (v1<=v2)?1:0;
-                    break;
-                case OpCode::J:
-                    result = v1;
-                    break;
-                case OpCode::SLT:
-                    result = (v1<v2)?1:0;
-                    break;
-                case OpCode::SLTI:
-                    result = (v1<imm)?1:0;
+                    res = (p.v1 <= p.v2) ? 1 : 0;
                     break;
 
                 //Logic:
                 case OpCode::AND:
-                    result = (v1&v2);
+                    res = p.v1 & p.v2;
                     break;
                 case OpCode::OR:
-                    result = (v1|v2);
+                    res = p.v1 | p.v2;
                     break;
                 case OpCode::XOR:
-                    result = (v1^v2);
+                    res = p.v1 ^ p.v2;
                     break;
                 case OpCode::ANDI:
-                    result = (v1&imm);
+                    res = p.v1 & p.imm;
                     break;
                 case OpCode::ORI:
-                    result = (v1|imm);
+                    res = p.v1 | p.imm;
                     break;
                 case OpCode::XORI:
-                    result = (v1^imm);
+                    res = p.v1 ^ p.imm;
                     break;
                 default:
                     break;
             }
-            has_result = 1;
-       }        
+
+            has_result = true;
+            has_exception = exc;
+            result = res;
+            dest_rob_tag = p.dest_rob_tag;
+            rs_pointer = p.rs_pointer;
+        }
     }
-    else if(!has_result){
-        int selected_rs = -1;
-        int smallest_dist = rob_size + 1; //Initialized with distance larger than rob size.
-        //Finding the oldest instruction based on smallest distance:
-        for(int i=0; i<rs_entries.size(); i++){
-            if(rs_entries[i].active && rs_entries[i].tag1 == -1 && rs_entries[i].tag2==-1){
-                int dist = (rs_entries[i].dest_rob_tag - rob_head + rob_size)%rob_size;
-                if(dist < smallest_dist){
-                    smallest_dist = dist;
-                    selected_rs = i;
-                }
+    std::vector<PipelineEntry> remaining;
+    for(auto& p : pipeline){
+        if(p.cycles_left > 0){
+            remaining.push_back(p);
+        }
+    }
+    pipeline = remaining;
+
+    int selected_rs = -1;
+    int smallest_dist = rob_size + 1;
+    for(int i = 0; i < rs_entries.size(); i++){
+        if(!rs_entries[i].active || rs_entries[i].tag1 != -1 || rs_entries[i].tag2 != -1) continue;
+        // check not already in pipeline
+        bool already_in = false;
+        for(auto& p : pipeline){
+            if(p.rs_pointer == &rs_entries[i]){
+                already_in = true;
+                break;
             }
         }
-        if(selected_rs!=-1){
-            op = rs_entries[selected_rs].op;
-            v1 = rs_entries[selected_rs].v1;
-            v2 = rs_entries[selected_rs].v2;
-            imm = rs_entries[selected_rs].imm;
-            dest_rob_tag = rs_entries[selected_rs].dest_rob_tag;
-            cycle_remaining = latency;
-
-            rs_pointer = &rs_entries[selected_rs];
+        if(already_in) continue;
+        int dist = (rs_entries[i].dest_rob_tag - rob_head + rob_size) % rob_size;
+        if (dist < smallest_dist) {
+            smallest_dist = dist;
+            selected_rs = i;
         }
     }
-
+    if(selected_rs != -1){
+        PipelineEntry p;
+        p.op = rs_entries[selected_rs].op;
+        p.v1 = rs_entries[selected_rs].v1;
+        p.v2 = rs_entries[selected_rs].v2;
+        p.imm = rs_entries[selected_rs].imm;
+        p.dest_rob_tag = rs_entries[selected_rs].dest_rob_tag;
+        p.cycles_left = latency;
+        p.rs_pointer = &rs_entries[selected_rs];
+        pipeline.push_back(p);
+    }
 }

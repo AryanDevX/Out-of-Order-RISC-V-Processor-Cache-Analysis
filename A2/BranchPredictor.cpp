@@ -10,9 +10,6 @@ int BranchPredictor::predict(int current_pc, int imm, OpCode op){
     BPState state = bht[current_pc];
     bool predict_taken = (state == BPState::WEAKLY_TAKEN || state == BPState::STRONGLY_TAKEN);
     if(predict_taken){
-        if(btb.find(current_pc)!=btb.end()){
-            return btb[current_pc];
-        }
         return current_pc+imm;
     }
     else{
@@ -31,12 +28,12 @@ void BranchPredictor::update(int pc, int actual_target, bool taken, bool was_cor
     BPState state = bht[pc];
     if(taken){
         if(state == BPState::STRONGLY_NOT_TAKEN) bht[pc] = BPState::WEAKLY_NOT_TAKEN;
-        else if (state == BPState::WEAKLY_NOT_TAKEN) bht[pc] = BPState::WEAKLY_TAKEN;
-        else if (state == BPState::WEAKLY_TAKEN) bht[pc] = BPState::STRONGLY_TAKEN;
+        else if(state == BPState::WEAKLY_NOT_TAKEN) bht[pc] = BPState::WEAKLY_TAKEN;
+        else if(state == BPState::WEAKLY_TAKEN) bht[pc] = BPState::STRONGLY_TAKEN;
     } 
     else{
-        if (state == BPState::STRONGLY_TAKEN) bht[pc] = BPState::WEAKLY_TAKEN;
-        else if (state == BPState::WEAKLY_TAKEN) bht[pc] = BPState::WEAKLY_NOT_TAKEN;
-        else if (state == BPState::WEAKLY_NOT_TAKEN) bht[pc] = BPState::STRONGLY_NOT_TAKEN;
+        if(state == BPState::STRONGLY_TAKEN) bht[pc] = BPState::WEAKLY_TAKEN;
+        else if(state == BPState::WEAKLY_TAKEN) bht[pc] = BPState::WEAKLY_NOT_TAKEN;
+        else if(state == BPState::WEAKLY_NOT_TAKEN) bht[pc] = BPState::STRONGLY_NOT_TAKEN;
     }
 };
