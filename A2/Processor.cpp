@@ -155,6 +155,8 @@ void Processor::loadProgram(const std::string& filename){
         if(inst.op == OpCode::J){
             if(label_map.find(tokens[0]) != label_map.end()){
                 inst.imm = label_map[tokens[0]] - i;
+            } else {
+                inst.imm = std::stoi(tokens[0]);
             }
         }
         else if(inst.op == OpCode::LW || inst.op == OpCode::SW){
