@@ -190,7 +190,11 @@ void Processor::loadProgram(const std::string& filename){
             if(label_map.find(tokens[2]) != label_map.end()){
                 inst.imm = label_map[tokens[2]] - i;
             }
+             else{
+                inst.imm = std::stoi(tokens[2]);
+            }
         }
+
         // addi x1, x2, 5
         else if(inst.op == OpCode::ADDI || inst.op == OpCode::SLTI || inst.op == OpCode::ANDI || inst.op == OpCode::ORI || inst.op == OpCode::XORI){
             inst.dest = parse_reg(tokens[0]);
@@ -317,9 +321,10 @@ void Processor::renameSource(int reg, int& val, int& tag){
     }
 };
 
-void Processor::stageDecode(){
+void Processor::stageDecode(int rob_count_at_cycle_start){
     if(!ifId.valid) return;
-    if(rob_count >= rob_size) return; //stall
+    // Decode should not consume a ROB slot that was freed by commit in this same cycle.
+    if(rob_count_at_cycle_start >= rob_size) return; //stall
     Instruction cur_inst = ifId.inst;
     // Handling J
     if(cur_inst.op == OpCode::J){
@@ -422,12 +427,11 @@ void Processor::stageDecode(){
 
 }
 
-void Processor::stageExecuteAndBroadcast(){
+void Processor::stageExecute(){
     for(auto& unit:units){
         unit.executeCycle(rob_head, rob_size);
     }
     lsq->executeCycle(rob_head, rob_size, Memory, rob);
-    broadcastOnCDB();
 }
 
 void Processor::stageCommit(){
@@ -491,15 +495,17 @@ void Processor::stageCommit(){
 
 bool Processor::step(){
     if(exception) return false;
+    int rob_count_at_cycle_start = rob_count;
     flush_triggered_in_commit = false;
     stageCommit();
     if(flush_triggered_in_commit){
         clock_cycle++;
         return !exception && !(pc >= (int)inst_memory.size() && rob_count == 0 && !ifId.valid);
     }
-    stageExecuteAndBroadcast();
-    stageDecode();
+    stageExecute();
+    stageDecode(rob_count_at_cycle_start);
     stageFetch();
+    broadcastOnCDB();
     clock_cycle++;
     //halt when ROB empty and nothing left to fetch and no instruction in latch
     return !(pc >= (int)inst_memory.size() && rob_count == 0 && !ifId.valid);

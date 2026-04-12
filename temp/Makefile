@@ -6,4 +6,4 @@ compile:
  
 run:
 	$(CXX) $(CXXFLAGS) Preprocess.cpp -o preprocess
-	./Preprocess $(FILE)
+	./preprocess $(FILE)

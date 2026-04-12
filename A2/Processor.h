@@ -25,9 +25,8 @@ struct IfIDLatch {
 };
 
 class Processor {
-private:
+public:
     IfIDLatch ifId;
-    bool flush_triggered_in_commit = false;
     
 public:
     int pc;
@@ -53,6 +52,7 @@ public:
     std::vector<ExecutionUnit> units;
     LoadStoreQueue* lsq;
     BranchPredictor bp;
+    bool flush_triggered_in_commit = false;
 
     Processor(ProcessorConfig& config);
 
@@ -66,9 +66,9 @@ public:
     
     void renameSource(int reg, int& val, int& tag);
 
-    void stageDecode();
+    void stageDecode(int rob_count_at_cycle_start);
 
-    void stageExecuteAndBroadcast();
+    void stageExecute();
 
     void stageCommit();
 

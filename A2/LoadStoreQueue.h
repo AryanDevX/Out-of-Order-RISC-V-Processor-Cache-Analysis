@@ -19,8 +19,6 @@ public:
     int address;
     int store_data = 0;
     RSEntry* rs_pointer;
-    std::unordered_set<int> delayed_load_tags;
-    
     void capture(int tag, int val);
     void executeCycle(int rob_head, int rob_size, std::vector<int>& Memory, const std::vector<ROBEntry>& rob);
 };

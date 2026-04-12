@@ -16,23 +16,6 @@ void LoadStoreQueue::capture(int tag, int val){
 }
 
 void LoadStoreQueue::executeCycle(int rob_head, int rob_size, std::vector<int>& Memory, const std::vector<ROBEntry>& rob) {
-    // Remove stale delayed tags (e.g., after commit/flush).
-    std::unordered_set<int> active_load_tags;
-    for(auto& rs : rs_entries){
-        if(rs.active && rs.op == OpCode::LW){
-            active_load_tags.insert(rs.dest_rob_tag);
-        }
-    }
-    std::vector<int> stale_tags;
-    for(int tag : delayed_load_tags){
-        if(active_load_tags.find(tag) == active_load_tags.end()){
-            stale_tags.push_back(tag);
-        }
-    }
-    for(int tag : stale_tags){
-        delayed_load_tags.erase(tag);
-    }
-
     //finding oldest entry(not oldest ready)
     int selected_rs = -1;
     int smallest_dist = rob_size + 1;
@@ -60,20 +43,24 @@ void LoadStoreQueue::executeCycle(int rob_head, int rob_size, std::vector<int>& 
         if(issue_ok && rs_entries[selected_rs].op == OpCode::LW){
             int load_addr = rs_entries[selected_rs].v1 + rs_entries[selected_rs].imm;
             int load_tag = rs_entries[selected_rs].dest_rob_tag;
-            bool unresolved_same_addr_store = false;
+            bool must_wait = false;
             for(int idx = rob_head; idx != load_tag; idx = (idx + 1) % rob_size){
                 if(!rob[idx].active || rob[idx].op != OpCode::SW) continue;
 
+                // If older store already finished LSQ execution, this load can
+                // forward from ROB when it completes.
                 if(rob[idx].ready){
                     continue;
                 }
 
-                // Try to resolve older store address early from pipeline or RS.
+                // Try to resolve older store address from LSQ pipeline or RS.
                 bool addr_known = false;
                 int store_addr = 0;
+                bool store_in_pipeline = false;
 
                 for(auto& p : pipeline){
                     if(p.dest_rob_tag == idx){
+                        store_in_pipeline = true;
                         addr_known = true;
                         store_addr = p.v1 + p.imm;
                         break;
@@ -91,25 +78,25 @@ void LoadStoreQueue::executeCycle(int rob_head, int rob_size, std::vector<int>& 
                     }
                 }
 
-                // If same-address older store has not even entered LSQ pipeline yet,
-                // the load must wait. If it is already in pipeline, allow overlap.
-                if(addr_known && store_addr == load_addr){
-                    unresolved_same_addr_store = true;
+                // Memory disambiguation:
+                // - Unknown older-store address => wait.
+                // - Known same-address older store not yet in pipeline => wait.
+                //   (If already in pipeline, allow overlap and forward later.)
+                if(!addr_known){
+                    must_wait = true;
+                    break;
+                }
+                if(store_addr == load_addr && !store_in_pipeline){
+                    must_wait = true;
+                    break;
                 }
             }
 
-            if(unresolved_same_addr_store){
-                // Delay only one cycle for this load tag.
-                if(delayed_load_tags.find(load_tag) == delayed_load_tags.end()){
-                    delayed_load_tags.insert(load_tag);
-                    issue_ok = false;
-                }
-            } else {
-                delayed_load_tags.erase(load_tag);
+            if(must_wait){
+                issue_ok = false;
             }
         }
         if(issue_ok){
-            delayed_load_tags.erase(rs_entries[selected_rs].dest_rob_tag);
             PipelineEntry p;
             p.op = rs_entries[selected_rs].op;
             p.v1 = rs_entries[selected_rs].v1;
@@ -139,16 +126,33 @@ void LoadStoreQueue::executeCycle(int rob_head, int rob_size, std::vector<int>& 
                     } 
                     else{
                         // Store-to-load forwarding:
-                        // use the youngest older ready store to same address.
+                        // use the youngest older store to same address from:
+                        // (1) ready ROB stores, (2) in-flight LSQ store pipeline.
                         bool forwarded = false;
                         int load_tag = p.dest_rob_tag;
                         for(int idx = rob_head; idx != load_tag; idx = (idx + 1) % rob_size){
-                            if(!rob[idx].active || !rob[idx].ready || rob[idx].op != OpCode::SW){
+                            if(!rob[idx].active || rob[idx].op != OpCode::SW){
                                 continue;
                             }
-                            if(rob[idx].store_add == addr){
+
+                            if(rob[idx].ready && rob[idx].store_add == addr){
                                 res = rob[idx].value;
                                 forwarded = true;
+                                continue;
+                            }
+
+                            // Not ready yet: check if this older store is in LSQ pipeline
+                            // and can be forwarded directly.
+                            for(auto& older : pipeline){
+                                if(older.op != OpCode::SW || older.dest_rob_tag != idx){
+                                    continue;
+                                }
+                                int older_addr = older.v1 + older.imm;
+                                if(older_addr == addr){
+                                    res = older.v2;
+                                    forwarded = true;
+                                }
+                                break;
                             }
                         }
                         if(!forwarded){
