@@ -1,4 +1,3 @@
-
 #include <stdlib.h>
 #include "graph.h"
 CSRGraph* convert_to_csr(Graph* g) { 
@@ -6,8 +5,10 @@ CSRGraph* convert_to_csr(Graph* g) {
     int m = 0;
 
     CSRGraph* csr = (CSRGraph*)malloc(sizeof(CSRGraph));
+    if(!csr) return NULL;  
     csr->num_vertices = n;
     csr->row_ptr = (int*)malloc((n+1)*sizeof(int));
+    if(!csr->row_ptr) { free(csr); return NULL;} 
     csr->row_ptr[0] = 0;
 
     for(int v=0; v<n; v++){
@@ -19,7 +20,8 @@ CSRGraph* convert_to_csr(Graph* g) {
         m += deg;
     }
     csr->num_edges = m;
-    csr->col_idx = (int*)malloc(m*sizeof(int));
+    csr->col_idx = (int*)malloc((m>0?m:1)*sizeof(int));
+    if(!csr->col_idx){ free(csr->row_ptr); free(csr); return NULL; }
     
     for(int v=0; v<n; v++){
         int idx = csr->row_ptr[v];

@@ -5,7 +5,9 @@ int bfs_pointer(Graph* g, int source, int* dist) {
     for(int i=0; i<n; i++){
         dist[i] =-1;
     }
+    if(n == 0)return 0;    
     int* queue = (int*)malloc(n*sizeof(int));
+    if(!queue)return -1; 
     int head = 0, tail = 0;
     dist[source] = 0;
     queue[tail++] = source;
