@@ -1,0 +1,25 @@
+==40551== Cachegrind, a high-precision tracing profiler
+==40551== Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.
+==40551== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==40551== Command: ./graph_bench --impl=pointer --graph=data/er_n100000_d8.txt --source=0 --repeat=10
+==40551== 
+--40551-- warning: L3 cache found, using its data for the LL simulation.
+==40551== brk segment overflow in thread #1: can't grow to 0x4859000
+==40551== (see section Limitations in user manual)
+==40551== NOTE: further instances of this message will not be shown
+==40551== 
+==40551== I refs:        1,069,560,925
+==40551== I1  misses:            1,718
+==40551== LLi misses:            1,711
+==40551== I1  miss rate:          0.00%
+==40551== LLi miss rate:          0.00%
+==40551== 
+==40551== D refs:          387,852,921  (245,369,448 rd   + 142,483,473 wr)
+==40551== D1  misses:       14,630,794  ( 14,087,992 rd   +     542,802 wr)
+==40551== LLd misses:        5,398,799  (  4,917,342 rd   +     481,457 wr)
+==40551== D1  miss rate:           3.8% (        5.7%     +         0.4%  )
+==40551== LLd miss rate:           1.4% (        2.0%     +         0.3%  )
+==40551== 
+==40551== LL refs:          14,632,512  ( 14,089,710 rd   +     542,802 wr)
+==40551== LL misses:         5,400,510  (  4,919,053 rd   +     481,457 wr)
+==40551== LL miss rate:            0.4% (        0.4%     +         0.3%  )

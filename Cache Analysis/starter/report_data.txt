@@ -1,0 +1,63 @@
+COL216 A3 - Cache Parameter Experiments
+=======================================
+
+Implementation : pointer
+Experiment     : 1. Baseline
+Parameters     : --D1=32768,8,64
+Time (ms)      : 4.51
+D1 Misses      : 225,275
+LLd Misses     : 44,110
+---------------------------------------
+Implementation : csr
+Experiment     : 1. Baseline
+Parameters     : --D1=32768,8,64
+Time (ms)      : 9.93
+D1 Misses      : 279,715
+LLd Misses     : 49,753
+---------------------------------------
+
+Implementation : pointer
+Experiment     : 2. Double Cache Size (64KB)
+Parameters     : --D1=65536,8,64
+Time (ms)      : 4.87
+D1 Misses      : 195,255
+LLd Misses     : 44,107
+---------------------------------------
+Implementation : csr
+Experiment     : 2. Double Cache Size (64KB)
+Parameters     : --D1=65536,8,64
+Time (ms)      : 10.08
+D1 Misses      : 245,783
+LLd Misses     : 49,754
+---------------------------------------
+
+Implementation : pointer
+Experiment     : 3. Double Associativity (16-way)
+Parameters     : --D1=32768,16,64
+Time (ms)      : 5.37
+D1 Misses      : 226,173
+LLd Misses     : 44,110
+---------------------------------------
+Implementation : csr
+Experiment     : 3. Double Associativity (16-way)
+Parameters     : --D1=32768,16,64
+Time (ms)      : 11.41
+D1 Misses      : 280,564
+LLd Misses     : 49,755
+---------------------------------------
+
+Implementation : pointer
+Experiment     : 4. Double Line Size (128B)
+Parameters     : --D1=32768,8,128
+Time (ms)      : 4.99
+D1 Misses      : 147,366
+LLd Misses     : 43,231
+---------------------------------------
+Implementation : csr
+Experiment     : 4. Double Line Size (128B)
+Parameters     : --D1=32768,8,128
+Time (ms)      : 9.41
+D1 Misses      : 166,983
+LLd Misses     : 48,120
+---------------------------------------
+
